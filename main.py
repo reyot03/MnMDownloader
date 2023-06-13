@@ -39,9 +39,6 @@ def select_num(text, length):
 
 def input_manga():
     manga_name = input("Please enter name of the manga: ")
-    # invalid_char_list = ['\'', '"', ';', '\\', '?', '%']
-    # for char in invalid_char_list:
-    #     manga_name = manga_name.replace(char, '')
     manga_name = ''.join(c for c in manga_name if c.isalnum() or c == ' ' or c == '-')
     if manga_name == '':
         last_exit_check()
@@ -49,15 +46,6 @@ def input_manga():
         return manga_name
     print_hline()
     return input_manga()
-
-
-# def show_manga(manga_list):
-#     index = 1
-#     for manga in manga_list:
-#         print(str(index), ":", sep='')
-#         print("Name:", manga["name"])
-#         print("Latest Chapter:", manga["latest_chapter"], "\n")
-#         index += 1
 
 
 def select_chapters(chapters):
@@ -111,8 +99,6 @@ def main():
         check_download_more = input("Enter y/Y to download more: ")
         if not check_download_more in ['y', 'Y']:
             download_more = False
-
-    # print(manga.chapter_list)
 
 
 if __name__ == '__main__':
