@@ -36,6 +36,4 @@ def get_key_iv():
 	key = re.search(r'var key = CryptoJS.enc.Hex.parse\(\W(.*?)\W\);'.replace(' ', r'\W+'), decripted_script).group(1)
 	iv = re.search(r'var iv = CryptoJS.enc.Hex.parse\(\W(.*?)\W\);'.replace(' ', r'\W+'), decripted_script).group(1)
 
-	# print("key:", key, "\niv:", iv)
-	# print("type of key:", type(key))
 	return (key, iv)
