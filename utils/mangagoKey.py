@@ -33,6 +33,8 @@ def get_key_iv():
 	# decrypt sojson.v4 script and find key and iv
 	encrypted_script = get_page(script_url).decode()
 	decripted_script = decode_sojson_v4(encrypted_script)
+	if not decripted_script:
+		return ('e11adc3949ba59abbe56e057f20f883e', '1234567890abcdef1234567890abcdef')
 	key = re.search(r'var key = CryptoJS.enc.Hex.parse\(\W(.*?)\W\);'.replace(' ', r'\W+'), decripted_script).group(1)
 	iv = re.search(r'var iv = CryptoJS.enc.Hex.parse\(\W(.*?)\W\);'.replace(' ', r'\W+'), decripted_script).group(1)
 
