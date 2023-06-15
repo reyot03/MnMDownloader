@@ -2,21 +2,22 @@ from Crypto.Cipher import AES
 import base64
 import aiofiles
 import os
-import imgkeys
+import constants
 from io import BytesIO
 from PIL import Image
 import math
 import time
 
+
 async def unscramble_image(url, res):
-    _imgkeys_ = imgkeys._imgkeys_
-    mk1 = imgkeys.mk1
-    mk2 = imgkeys.mk2
-    mk1_val = imgkeys.mk1_val
-    mk2_val = imgkeys.mk2_val
+    IMGKEYS = constants.IMGKEYS
+    MK1 = constants.MK1
+    MK2 = constants.MK2
+    MK1_VAL = constants.MK1_VAL
+    MK2_VAL = constants.MK2_VAL
 
     unscrambled = False
-    for m in ([*_imgkeys_] + [mk1] + [mk2]):
+    for m in ([*IMGKEYS] + [MK1] + [MK2]):
         if m in url:
             st_time = time.perf_counter()
             unscrambled = True
@@ -26,10 +27,10 @@ async def unscramble_image(url, res):
             img_ext = im.format
             im_new = Image.new(im.mode, im.size)
 
-            unscramble_key = _imgkeys_[m]
+            unscramble_key = IMGKEYS[m]
 
-            if mk1 in url or mk2 in url:
-                _0X2c9a16 = mk1_val if mk1 in url else mk2_val
+            if MK1 in url or MK2 in url:
+                _0X2c9a16 = MK1_VAL if MK1 in url else MK2_VAL
                 estr = _0X2c9a16
                 ekey = estr[19]
                 ekey = ekey + estr[23]
