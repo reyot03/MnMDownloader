@@ -1,16 +1,11 @@
 import asyncio
 import os
 from bs4 import BeautifulSoup as bs
-# import requests
 from urllib import request
 from requests_html import AsyncHTMLSession
 import time
 import re
 import mangagodownloader
-
-# from urllib.parse import urlparse
-# from utils.ImagesGetter import get_imgurls, main_get_images
-# from utils.ImgToPdf import pdf_maker
 
 
 class Manga_Site:
@@ -19,7 +14,6 @@ class Manga_Site:
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.75 Safari/537.36'}
         self.manga_selected = None
         self.manga_name = None
-
 
 
 class Mangago(Manga_Site):
@@ -65,7 +59,6 @@ class Mangago(Manga_Site):
 
     def get_manga_list(self):
         search_url = self.base_manga_search_url.format(self.manga_search_input)
-        # print(search_url)
         html_text = self.request_page(search_url)
 
         soup = bs(html_text, "html.parser")
@@ -73,7 +66,6 @@ class Mangago(Manga_Site):
         try:
             for m in m_container:
                 manga = {}
-                # manga["name"] = m.find(class_="tit").get_text(strip=True)
                 manga["name"] = m.a["title"]
                 manga["url"] = m.a["href"]
                 try:
@@ -92,7 +84,6 @@ class Mangago(Manga_Site):
         except:
             print("Something went wrong while getting manga link")
             exit()
-        # print(self.manga_list)
 
     def search_chapters(self, manga_selected):
         self.manga_selected = manga_selected
@@ -121,7 +112,6 @@ class Mangago(Manga_Site):
         except:
             print("Something went wrong while getting chapters")
             exit()
-        # print(self.chapter_list)
 
     def download_chapters(self, st_index, end_index):
         manga_path = f"./Downloads/{self.manga_name}"
@@ -130,10 +120,14 @@ class Mangago(Manga_Site):
 
         asession = AsyncHTMLSession()
         tasks = [lambda chapter=chapter:mangagodownloader.download_ch(asession, chapter["name"], chapter["url"], manga_path, self.key, self.iv) for chapter in self.chapter_list[st_index:(end_index+1)]]
-        st_time = time.perf_counter()
-        asession.run(*tasks)
-        time_taken = time.perf_counter() - st_time
-        print("\nDownload time:", time_taken)
+        try:    
+            st_time = time.perf_counter()
+            asession.run(*tasks)
+            time_taken = time.perf_counter() - st_time
+        except URLERROR:
+            print("Couldn't connect to server")
+            exit()
+        print(f'\nDownload time: {time_taken:.2f}s')
 
 
 class Mangageko(Manga_Site):
