@@ -17,12 +17,12 @@ async def unscramble_image(url, res):
     MK2_VAL = constants.MK2_VAL
 
     unscrambled = False
+    im = Image.open(BytesIO(res.html.raw_html))
+
     for m in ([*IMGKEYS] + [MK1] + [MK2]):
         if m in url:
             st_time = time.perf_counter()
             unscrambled = True
-            buffer = BytesIO()
-            im = Image.open(BytesIO(res.html.raw_html))
             width, height = im.size
             img_ext = im.format
             im_new = Image.new(im.mode, im.size)
@@ -73,25 +73,19 @@ async def unscramble_image(url, res):
                 im_crop = im.crop((int(src_x), int(src_y), int(src_x + sm_width), int(src_y + sm_height)))
                 im_new.paste(im_crop, box=(int(dst_x), int(dst_y)))
 
-            im_new.save(buffer, format=img_ext)
-
             fln = time.perf_counter() - st_time
-            print("took", fln, "to unscramble image")
+            print(f"took {fln:.5f} to unscramble image")
 
     if unscrambled is False:
-        return res.content
+        return im
     else:
-        return buffer.getbuffer()
+        return im_new
             
 
-async def download_image(asession, ch_path, img_url, page_num):
+async def download_image(asession, ch_path, img_url):
     res = await asession.get(img_url)
     image_content = await unscramble_image(img_url, res)
-    ext = os.path.splitext(img_url)[1]
-    img_path = '{}/Page{}{}'.format(ch_path, page_num, ext or '.jpeg')
-    f = await aiofiles.open(img_path, mode="wb")
-    await f.write(image_content)
-    f.close()
+    return image_content
 
 async def get_urls(asession, chapter_url, key, iv):
     res = await asession.get(chapter_url)
@@ -107,10 +101,12 @@ async def download_ch(asession, chapter_name, chapter_url, manga_path, key, iv):
     print('Downloading', chapter_name)
     img_urls = await get_urls(asession, chapter_url, key, iv)
     ch_path = f'{manga_path}/{chapter_name}'
-    if not os.path.exists(ch_path):
-        os.mkdir(ch_path)
-    page_num = 0
+    images = []
     for img_url in img_urls:
-        page_num += 1
-        await download_image(asession, ch_path, img_url, page_num)
+        images.append(await download_image(asession, ch_path, img_url))
+    
+    # creating pdf
+    pdf_path = f'{manga_path}/{chapter_name}.pdf'
+    images[0].save(pdf_path, "PDF" ,resolution=100.0, save_all=True, append_images=list[1:])
+
     print(f'\n{chapter_name} downloaded.')
