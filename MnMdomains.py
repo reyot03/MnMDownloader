@@ -1,7 +1,7 @@
 import asyncio
 import os
 from bs4 import BeautifulSoup as bs
-from urllib import request
+from urllib import request, error
 from requests_html import AsyncHTMLSession
 import time
 import re
@@ -124,7 +124,7 @@ class Mangago(Manga_Site):
             st_time = time.perf_counter()
             asession.run(*tasks)
             time_taken = time.perf_counter() - st_time
-        except URLERROR:
+        except error.URLError:
             print("Couldn't connect to server")
             exit()
         print(f'\nDownload time: {time_taken:.2f}s')
