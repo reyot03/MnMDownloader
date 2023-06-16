@@ -1,5 +1,4 @@
 from decor import *
-from SITES import SITE_NAMES, SITE_CLASSES
 chapter_selected = None
 
 
@@ -57,8 +56,20 @@ def select_chapters(chapters):
         print("Starting Chapter can't be greater than End Chapter\n")
         return select_chapters(chapters)
 
+def get_sites():
+    SITE_NAMES = []
+    SITE_CLASSES = []
+
+    for name, cls in inspect.getmembers(MnMdomains, inspect.isclass):
+        if cls.__module__ == 'MnMdomains':
+            SITE_NAMES.append(name)
+            SITE_CLASSES.append(cls)
+
+    return (SITE_NAMES, SITE_CLASSES)
+
 
 def main():
+    SITE_NAMES, SITE_CLASSES = get_sites()
     # show list of sites and choose which site to download from
     show_list(SITE_NAMES)
     site_selected = select_num("Please select site to download from: ", len(SITE_NAMES))
