@@ -49,7 +49,7 @@ def input_manga():
 
 
 def select_chapters(chapters):
-    s = select_num("Starting Chapter to download: ", len(chapters))
+    s = select_num("\nStarting Chapter to download: ", len(chapters))
     f = select_num("Ending Chapter to download: ", len(chapters))
     if s <= f:
         return s, f
