@@ -1,4 +1,3 @@
-import asyncio
 import os
 from bs4 import BeautifulSoup as bs
 from urllib import request, error
