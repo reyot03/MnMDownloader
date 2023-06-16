@@ -62,7 +62,7 @@ def get_sites():
     SITE_CLASSES = []
 
     for name, cls in inspect.getmembers(MnMdomains, inspect.isclass):
-        if cls.__module__ == 'MnMdomains':
+        if name != 'Manga_Site' and cls.__module__ == 'MnMdomains':
             SITE_NAMES.append(name)
             SITE_CLASSES.append(cls)
 
