@@ -1,4 +1,4 @@
-import inspect
+import inspect, MnMdomains
 from decor import *
 chapter_selected = None
 
