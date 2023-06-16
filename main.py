@@ -1,3 +1,4 @@
+import inspect
 from decor import *
 chapter_selected = None
 
