@@ -27,8 +27,7 @@ Running program
 ```
     
 ## Supported Sites
-* [mangago](https://mangago.me/) [For manga/manhwa]
-
-
+* [mangago](https://mangago.me/)
+* [mangageko](https://www.mangageko.com/)
 
 
