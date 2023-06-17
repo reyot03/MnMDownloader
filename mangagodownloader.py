@@ -1,7 +1,5 @@
 from Crypto.Cipher import AES
 import base64
-import aiofiles
-import os
 import constants
 from io import BytesIO
 from PIL import Image
@@ -46,14 +44,14 @@ async def unscramble_image(url, res):
 
                 for j in [3, 2]:
                     for i in range(estr_len-1, int(ekey[j])-1, -1):
-                        # swap characters at pos and i 
+                        # swap characters at pos and i
                         pos = i - int(ekey[j])
-                        estr = estr[:pos] + estr[i] + estr[pos+1:i] + estr[pos] + estr[i+1:] 
+                        estr = estr[:pos] + estr[i] + estr[pos+1:i] + estr[pos] + estr[i+1:]
 
                 for j in [1, 0]:
                     for i in range(estr_len-1, int(ekey[j])-1, -1):
                         if i & 1:       # check if odd
-                            estr = estr[:pos] + estr[i] + estr[pos+1:i] + estr[pos] + estr[i+1:] 
+                            estr = estr[:pos] + estr[i] + estr[pos+1:i] + estr[pos] + estr[i+1:]
 
                 unscramble_key = estr
 
@@ -64,7 +62,7 @@ async def unscramble_image(url, res):
 
             for i in range(0, (widthnum * height_num)):
                 k = 0 if not unscramble_key[i].isdigit() else float(unscramble_key[i])
-                _y = math.floor(k / height_num)                                 # 
+                _y = math.floor(k / height_num)
                 dst_y = _y * sm_height
                 dst_x = (k - _y * widthnum) * sm_width
                 _y = math.floor(i / widthnum)
@@ -80,12 +78,13 @@ async def unscramble_image(url, res):
         return im
     else:
         return im_new
-            
 
-async def download_image(asession, ch_path, img_url):
+
+async def download_image(asession, img_url):
     res = await asession.get(img_url)
     image_content = await unscramble_image(img_url, res)
     return image_content
+
 
 async def get_urls(asession, chapter_url, key, iv):
     res = await asession.get(chapter_url)
@@ -97,16 +96,21 @@ async def get_urls(asession, chapter_url, key, iv):
     img_urls = img_urls.split(',')
     return img_urls
 
+
+async def img_to_pdf(pdf_path, images):
+    images[0].save(pdf_path, "PDF", resolution=100.0,
+                   save_all=True, append_images=images[1:])
+
+
 async def download_ch(asession, chapter_name, chapter_url, manga_path, key, iv):
     print('Downloading', chapter_name)
     img_urls = await get_urls(asession, chapter_url, key, iv)
-    ch_path = f'{manga_path}/{chapter_name}'
     images = []
     for img_url in img_urls:
-        images.append(await download_image(asession, ch_path, img_url))
-    
+        images.append(await download_image(asession, img_url))
+
     # creating pdf
     pdf_path = f'{manga_path}/{chapter_name}.pdf'
-    images[0].save(pdf_path, "PDF" ,resolution=100.0, save_all=True, append_images=list[1:])
+    await img_to_pdf(pdf_path, images)
 
     print(f'\n{chapter_name} downloaded.')
