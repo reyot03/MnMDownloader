@@ -1,5 +1,5 @@
 # MnMDownloader
-Simple python program to scrap Manga, Manhua, Manhwa and Webtoon chapters.
+Simple python program to scrap Manga, Manhua, Manhwa and Webtoon chapters.<br>
 Outputs are in PDF format.
 
 ## Installation
@@ -28,7 +28,8 @@ Running program
 ```
     
 ## Supported Sites
-* [mangago](https://mangago.me/)
 * [mangageko](https://www.mangageko.com/)
+* [mangago](https://mangago.me/)
+
 
 
