@@ -7,6 +7,9 @@ from bs4 import BeautifulSoup as bs
 import os
 import time
 import mangagodownloader
+from reportlab.pdfgen import canvas
+from reportlab.lib.utils import ImageReader
+import gc
 
 
 class Manga_Site:
@@ -165,15 +168,44 @@ class Mangageko(Manga_Site):
     @staticmethod
     async def download_image(asession, img_url):
         res = await asession.get(img_url)
-        image_content = Image.open(BytesIO(res.html.raw_html))
-        if not (650 < image_content.size[0] < 850):
-            image_content = ImageOps.contain(image_content, (728, 1024))
+        image_content = ImageReader(BytesIO(res.content))
         return image_content
 
     @staticmethod
-    async def img_to_pdf(pdf_path, images):
+    async def img_to_pdf_low(pdf_path, images):
+        first_page = True
+        for pos, image in enumerate(images):
+            if first_page:
+                first_page_size = (page_width, page_height) = image.size
+                first_page = False
+            if not ((page_width-150) < image.size[0] < (page_width+150)):
+                new_image = ImageOps.contain(image, first_page_size)
+                images[pos] = new_image
         images[0].save(pdf_path, "PDF", resolution=100.0,
                        save_all=True, append_images=images[1:])
+
+    @staticmethod
+    async def img_to_pdf(pdf_path, images):
+        c = canvas.Canvas(pdf_path)
+        first_page = True
+        for im in images:
+            if first_page:
+                page_width, page_height = im.getSize()
+                first_page = False
+            if not ((page_width-150) < im.getSize()[0] < (page_width+150)):
+                width_ratio = page_width / im.getSize()[0]
+                height = width_ratio * im.getSize()[1]
+                c.setPageSize((page_width, height))
+            else:
+                width, height = im.getSize()
+                c.setPageSize((width, height))
+            c.drawImage(im, 0, 0, width, height)
+            c.showPage()
+        c.save()
+        del c
+        del images
+        gc.collect()
+
 
     async def download_ch(self, asession, chapter_name, chapter_url, manga_path):
         print('Downloading', chapter_name)
@@ -187,6 +219,7 @@ class Mangageko(Manga_Site):
         await self.img_to_pdf(pdf_path, images)
 
         print(f'\n{chapter_name} downloaded.')
+
 
     def download_chapters(self, st_index, end_index):
         manga_path = f"./Downloads/{self.manga_name}"
