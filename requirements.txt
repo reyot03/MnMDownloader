@@ -3,3 +3,4 @@ Pillow==9.5.0
 pycryptodome==3.18.0
 requests-html==0.10.0
 urllib3==1.26.16
+reportlab==4.0.4
