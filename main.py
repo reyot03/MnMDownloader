@@ -1,6 +1,6 @@
-import inspect, MnMdomains
+import inspect
+import MnMdomains
 from decor import *
-chapter_selected = None
 
 
 def show_list(li):
@@ -57,6 +57,7 @@ def select_chapters(chapters):
         print("Starting Chapter can't be greater than End Chapter\n")
         return select_chapters(chapters)
 
+
 def get_sites():
     SITE_NAMES = []
     SITE_CLASSES = []
@@ -78,13 +79,14 @@ def main():
     # show selected site and input the name of manga
     print(
         '\n', f"Selected Site is {SITE_NAMES[site_selected - 1]}".upper(), '\n')
-    manga_search_input = input_manga()
 
     # create object corresponding to selected site
     manga_site = SITE_CLASSES[site_selected-1]
     manga = manga_site()
 
     while not len(manga.manga_list):
+        manga_search_input = input_manga()
+
         # search for string from input in the site
         manga.search_manga(manga_search_input)
         if not len(manga.manga_list):
@@ -100,8 +102,7 @@ def main():
     # search chapters of chosen manga
     manga.search_chapters(manga_selected)
 
-    download_more = True
-    while download_more:
+    while True:
         # show the list of chapters and choose start and end chapters
         print('\n', f"Manga: {manga.manga_name} \n Chapters:".upper())
         chapters = [chapter["name"] for chapter in manga.chapter_list]
@@ -110,7 +111,7 @@ def main():
         manga.download_chapters(s-1, f-1)
         check_download_more = input("Enter y/Y to download more: ")
         if not check_download_more in ['y', 'Y']:
-            download_more = False
+            last_exit_check()
 
 
 if __name__ == '__main__':
