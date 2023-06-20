@@ -1,5 +1,6 @@
 import mnmdomains
 import argparse
+import sys
 
 
 def show_list(li):
@@ -18,7 +19,7 @@ def check_positive(string):
     if value != int(value) or value < 1:
         warn_invalid_select()
         raise argparse.ArgumentTypeError()
-    return value
+    return int(value)
 
 
 if __name__ == '__main__':
@@ -56,9 +57,12 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--mselect', type=check_positive, default=1,
                         help='index of manga to download. use --mlist to see the list')
     parser.add_argument('-i', '--start', default=1, type=check_positive, help='Starting Chapter to download')
-    parser.add_argument('-f', '--end', default=1, type=check_positive, help='Ending Chapter to download')
+    parser.add_argument('-f', '--end', type=check_positive, help='Ending Chapter to download')
 
     args = parser.parse_args()
+
+    if not args.end:
+        args.end = args.start
 
     if args.slist:
         show_list(SITES.keys())
