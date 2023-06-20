@@ -1,4 +1,4 @@
-import MnMdomains
+import mnmdomains
 import argparse
 
 
@@ -23,8 +23,8 @@ def check_positive(string):
 
 if __name__ == '__main__':
     SITES = {
-        'mangago': MnMdomains.Mangago,
-        'mangageko': MnMdomains.Mangageko
+        'mangago': mnmdomains.Mangago,
+        'mangageko': mnmdomains.Mangageko
     }
 
     parser = argparse.ArgumentParser(description='''
