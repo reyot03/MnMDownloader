@@ -39,7 +39,8 @@ def select_num(text, length):
 
 def input_manga():
     manga_name = input("Please enter name of the manga: ")
-    manga_name = ''.join(c for c in manga_name if c.isalnum() or c == ' ' or c == '-')
+    manga_name = ''.join(
+        c for c in manga_name if c.isalnum() or c == ' ' or c == '-')
     if manga_name == '':
         last_exit_check()
     else:
@@ -74,7 +75,8 @@ def main():
     SITE_NAMES, SITE_CLASSES = get_sites()
     # show list of sites and choose which site to download from
     show_list(SITE_NAMES)
-    site_selected = select_num("Please select site to download from: ", len(SITE_NAMES))
+    site_selected = select_num(
+        "Please select site to download from: ", len(SITE_NAMES))
 
     # show selected site and input the name of manga
     print(
