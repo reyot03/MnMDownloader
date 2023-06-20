@@ -1,6 +1,5 @@
 import mnmdomains
 import argparse
-import sys
 
 
 def show_list(li):
