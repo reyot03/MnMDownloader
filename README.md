@@ -38,11 +38,11 @@ pip install -r requirements.txt
 
 * If only [-f] parameter is given, it downloads first [-f] chapters.
 
-        python mnmdownloader.py one-punch man -i 1 -f 8
+        python mnmdownloader.py one-punch man -f 8
     
     and
 
-        python mnmdownloader.py one-punch man -f 8
+        python mnmdownloader.py one-punch man -i 1 -f 8
 
     are same
 
