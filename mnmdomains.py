@@ -15,11 +15,15 @@ import math
 
 
 class Manga_Site:
-    def __init__(self) -> None:
+    def __init__(self):
         self.HEADERS = {
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.75 Safari/537.36'}
         self.manga_selected = None
         self.manga_name = None
+        self.pdf_request = None
+        self.img_request = None
+        self.manga_list = []
+        self.chapter_list = []
 
     def filter_input(self):
         self.manga_search_input = self.manga_search_input.replace(' ', '+')
@@ -32,7 +36,7 @@ class Manga_Site:
         print(f'\nSearching for {self.manga_search_input.replace("+", " ")} in {self.site_name}')
         search_url = self.base_manga_search_url.format(self.manga_search_input)
         html_text = self.request_page(search_url)
-
+        # scrap manga names, chapter-urls, and latest chapter name
         soup = bs(html_text, "html.parser")
         m_container = soup.find(class_=self.manga_container_class).find_all('li')
         try:
@@ -51,13 +55,14 @@ class Manga_Site:
                 except:
                     continue
                 self.manga_list.append(manga)
-
         except TypeError:
             print("Manga not found. Try changing the keyword")
             exit()
         except:
             print("Something went wrong while getting manga link")
             exit()
+        if len(self.manga_list) == 0:
+            print("Manga not found. Try changing the keyword")
 
     def request_page(self, url):
         connection_error_count = 0
@@ -78,12 +83,12 @@ class Manga_Site:
         self.manga_selected = manga_selected
         self.manga_name = self.manga_list[self.manga_selected]["name"]
         print(f'Searching for chapters of {self.manga_name} in {self.site_name}')
-
+        # select manga url from manga-list using manga_selected integer
         search_url = self.manga_list[self.manga_selected]["url"]
         if self.site_name == "mangageko":
             search_url += "all-chapters"
         html_text = self.request_page(search_url)
-
+        # scrap chapter names and urls from that manga url
         soup = bs(html_text, "html.parser")
         ch_container = soup.find(class_=self.chapter_container_class).find_all(self.chapter_tag)
         try:
@@ -102,6 +107,9 @@ class Manga_Site:
         except:
             print("Something went wrong while getting chapters")
             exit()
+        if len(self.chapter_list) == 0:
+            print("No Chapters Found")
+            exit()
 
     @staticmethod
     async def get_urls(asession, chapter_url):
@@ -117,7 +125,7 @@ class Manga_Site:
         return image_content
 
     @staticmethod
-    async def img_to_pdf_high(pdf_path, images):
+    async def save_pdf(pdf_path, images):
         c = canvas.Canvas(pdf_path)
         first_page = True
         for im in images:
@@ -138,23 +146,31 @@ class Manga_Site:
             c.showPage()
         c.save()
 
+    @staticmethod
+    async def save_images(ch_path, images):
+        for pg, im in enumerate(images):
+            im.save(Path(ch_path, f'{pg+1}.{im.format}'))
+
     async def download_ch(self, asession, chapter_name, chapter_url, manga_path):
         print('Downloading', chapter_name)
         img_urls = await self.get_urls(asession, chapter_url)
         images = []
         for img_url in img_urls:
             images.append(await self.download_image(asession, img_url))
-
-        # creating pdf
-        pdf_path = f'{manga_path}/{chapter_name}.pdf'
-        await self.img_to_pdf_high(pdf_path, images)
-
+        # creating pdf and images
+        ch_path = Path(manga_path, chapter_name)
+        pdf_path = f'{ch_path}.pdf'
+        if self.img_request:
+            ch_path.mkdir(parents=True, exist_ok=True)
+            await self.save_images(ch_path, images)
+        if self.pdf_request:
+            await self.save_pdf(pdf_path, images)
         print(f'\n{chapter_name} downloaded.')
 
     def download_chapters(self, st_index, end_index):
         manga_path = Path('Downloads', self.manga_name)
         manga_path.mkdir(parents=True, exist_ok=True)
-
+        # using requests-html asynchronous session
         asession = AsyncHTMLSession()
         tasks = [lambda chapter=chapter:self.download_ch(
             asession, chapter["name"], chapter["url"], manga_path) for chapter in self.chapter_list[st_index:(end_index+1)]]
@@ -169,24 +185,22 @@ class Manga_Site:
 
 
 class Mangago(Manga_Site):
-    def __init__(self) -> None:
+    def __init__(self):
         super().__init__()
         import utils.mangagoKey
         (self.key, self.iv) = utils.mangagoKey.get_key_iv()
         self.key = bytes.fromhex(self.key)
         self.iv = bytes.fromhex(self.iv)
-
+        # site information to scrap data
         self.site_name = "mangago.me"
         self.base_url = "https://www.mangago.me"
         self.base_manga_search_url = "https://www.mangago.me/r/l_search/?name={}"
         self.manga_container_class = "pic_list"
-        # self.manga_container_id = "search_list"  # faster but id not available for other classes
+        # self.manga_container_id = "search_list"  # faster but id not available for other Sites
         self.latest_ch_class = "chico"
         self.chapter_container_class = "listing"
         self.chapter_container_id = "chapter_table"
         self.chapter_tag = 'tr'
-        self.manga_list = []
-        self.chapter_list = []
 
     @staticmethod
     async def unscramble_image(url, res):
@@ -195,52 +209,42 @@ class Mangago(Manga_Site):
         MK2 = constants.MK2
         MK1_VAL = constants.MK1_VAL
         MK2_VAL = constants.MK2_VAL
-
+        # unscramble images if url is match else return same image as PIL.Image object
         unscrambled = False
         im = Image.open(BytesIO(res.content))
-
         for m in ([*IMGKEYS] + [MK1] + [MK2]):
             if m in url:
                 st_time = time.perf_counter()
                 unscrambled = True
                 width, height = im.size
                 im_new = Image.new(im.mode, im.size)
-
-                unscramble_key = IMGKEYS[m]
-
-                if MK1 in url or MK2 in url:
+                if (MK1 in url) or (MK2 in url):
                     _0X2c9a16 = MK1_VAL if MK1 in url else MK2_VAL
                     estr = _0X2c9a16
                     ekey = estr[19]
                     ekey = ekey + estr[23]
                     ekey = ekey + estr[31]
                     ekey = ekey + estr[39]
-
                     estr = _0X2c9a16[0:19]
                     estr += _0X2c9a16[20:23]
                     estr += _0X2c9a16[24:31]
                     estr += _0X2c9a16[32:39]
                     estr += _0X2c9a16[40:]
                     estr_len = len(estr)
-
-                    for j in [3, 2]:
-                        for i in range(estr_len-1, int(ekey[j])-1, -1):
-                            # swap characters at pos and i
-                            pos = i - int(ekey[j])
-                            estr = estr[:pos] + estr[i] + estr[pos+1:i] + estr[pos] + estr[i+1:]
-
-                    for j in [1, 0]:
+                    for j in range(3, -1, -1):
                         for i in range(estr_len-1, int(ekey[j])-1, -1):
                             if i & 1:       # check if odd
+                                # swap characters at pos and i
+                                pos = i - int(ekey[j])
                                 estr = estr[:pos] + estr[i] + estr[pos+1:i] + estr[pos] + estr[i+1:]
-
                     unscramble_key = estr
-
+                else:
+                    unscramble_key = IMGKEYS[m]
+                # unscrambling image here
                 unscramble_key = unscramble_key.split('a')
                 widthnum = height_num = 9
                 sm_width = width / widthnum
                 sm_height = height / height_num
-
                 for i in range(0, (widthnum * height_num)):
                     k = 0 if not unscramble_key[i].isdigit(
                     ) else float(unscramble_key[i])
@@ -252,10 +256,9 @@ class Mangago(Manga_Site):
                     src_x = (i - _y * widthnum) * sm_width
                     im_crop = im.crop((int(src_x), int(src_y), int(src_x + sm_width), int(src_y + sm_height)))
                     im_new.paste(im_crop, box=(int(dst_x), int(dst_y)))
-
                 fln = time.perf_counter() - st_time
+                im_new.format = im.format
                 print(f"took {fln:.5f} to unscramble image")
-
         if unscrambled is False:
             return im
         return im_new
@@ -277,8 +280,10 @@ class Mangago(Manga_Site):
 
 
 class Mangageko(Manga_Site):
-    def __init__(self) -> None:
+    def __init__(self):
         super().__init__()
+        # site information to scrap data
+        # Mangageko is subclass of Manga_Site, so inherits all methods from there
         self.site_name = "mangageko"
         self.base_url = "https://www.mangageko.com"
         self.base_manga_search_url = "https://www.mangageko.com/search/?search={}"
@@ -286,5 +291,3 @@ class Mangageko(Manga_Site):
         self.latest_ch_class = "novel-stats"
         self.chapter_container_class = "chapter-list"
         self.chapter_tag = 'li'
-        self.manga_list = []
-        self.chapter_list = []

@@ -1,5 +1,6 @@
 import mnmdomains
 import argparse
+from urllib import error
 
 
 def show_list(li):
@@ -26,7 +27,6 @@ if __name__ == '__main__':
         'mangago': mnmdomains.Mangago,
         'mangageko': mnmdomains.Mangageko
     }
-
     parser = argparse.ArgumentParser(description='''
                         MnMDownloader is for downloading manga by webscraping.
                             It downloads only first one chapter by default.
@@ -40,7 +40,6 @@ if __name__ == '__main__':
 
     To see all available chapters
     py main.py one-punch man --chlist
-
 
     To see similar manga with key-word one-punch man
     py main.py one-punch man --mlist
@@ -57,41 +56,43 @@ if __name__ == '__main__':
                         help='index of manga to download. use --mlist to see the list')
     parser.add_argument('-i', '--start', default=1, type=check_positive, help='Starting Chapter to download')
     parser.add_argument('-f', '--end', type=check_positive, help='Ending Chapter to download')
-
+    parser.add_argument('-im', '--images', action=argparse.BooleanOptionalAction, help='Choice to download images')
+    parser.add_argument('-pdf', '--pdf', default=True,
+                        action=argparse.BooleanOptionalAction, help='Choice to download pdf')
     args = parser.parse_args()
-
     if not args.end:
         args.end = args.start
-
     if args.slist:
         show_list(SITES.keys())
-
     elif not args.manga_name:
-        print("Give me a name of manga to download")
-
+        print("Give me a name to download")
     elif args.start > args.end:
         print("Index of final chapter [-f] can't be greater than starting chapter [-i]\n")
         print(parser.parse_args(['-h']))
+    elif not (args.images or args.pdf):
+        print("Both images and pdf are not being downloaded. If you want only images, use '--images --no-pdf'")
 
     else:
-        manga = SITES[args.site]()
-        manga_name = ' '.join(args.manga_name)
-        manga.search_manga(manga_name)
-        if not len(manga.manga_list):
-            print("No manga found!! Try different keywords")
-
-        elif args.mlist:
-            show_list(f'{m["name"]} | Latest Chapter: {m["latest_chapter"]}' for m in manga.manga_list)
-
-        elif args.mselect > len(manga.manga_list):
-            warn_invalid_select()
-        else:
-            manga.search_chapters(args.mselect - 1)
-            if args.chlist:
-                print(f"Manga: {manga.manga_name} \nChapters:".upper())
-                chapters = [chapter["name"] for chapter in manga.chapter_list]
-                show_list(chapters)
-            elif args.end > len(manga.chapter_list):
+        try:
+            manga = SITES[args.site]()
+            manga_name = ' '.join(args.manga_name)
+            manga.search_manga(manga_name)
+            if not len(manga.manga_list):
+                print("No manga found!! Try different keywords")
+            elif args.mlist:
+                show_list(f'{m["name"]} | Latest Chapter: {m["latest_chapter"]}' for m in manga.manga_list)
+            elif args.mselect > len(manga.manga_list):
                 warn_invalid_select()
             else:
-                manga.download_chapters(args.start-1, args.end-1)
+                manga.search_chapters(args.mselect - 1)
+                if args.chlist:
+                    print(f"Manga: {manga.manga_name} \nChapters:".upper())
+                    chapters = [chapter["name"] for chapter in manga.chapter_list]
+                    show_list(chapters)
+                elif args.end > len(manga.chapter_list):
+                    warn_invalid_select()
+                else:
+                    manga.pdf_request, manga.img_request = args.pdf, args.images
+                    manga.download_chapters(args.start-1, args.end-1)
+        except error.URLError:
+            print("Connection Lost")
