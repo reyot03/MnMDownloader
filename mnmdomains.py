@@ -126,7 +126,11 @@ class Manga_Site:
     @staticmethod
     async def save_images(ch_path, images):
         for pg, im in enumerate(images):
-            im.save(Path(ch_path, f'{pg+1}.{im.format}'))
+            try:
+                img_format = im.format.lower()
+            except:
+                img_format = 'jpeg'
+            im.save(Path(ch_path, f'{pg+1}.{img_format}'))
 
     async def download_ch(self, chapter_name, chapter_url, manga_path):
         print('Downloading', chapter_name)
